@@ -1,8 +1,11 @@
+import os
+
+import ray
 import spacy
 import pandas as pd
 import re
 from nltk.tokenize import TreebankWordTokenizer
-
+from nltk.corpus import stopwords
 
 def WebItemsFilter(text):
     text = text.lower()
@@ -104,26 +107,10 @@ def NumericalExpressionFilter(word_list):
     return word_list
 
 
-class Treebank_WordTokenize():
+class Treebank_WordTokenize:
     def __init__(self):
         self.word_tokenizer = TreebankWordTokenizer()
-        self.stop_words = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your',
-                           'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she',
-                           'her', 'hers', 'herself', 'it', 'its', 'itself', 'they', 'them', 'their',
-                           'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'this', 'that',
-                           'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
-                           'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an',
-                           'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of',
-                           'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into',
-                           'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from',
-                           'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 'again',
-                           'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why',
-                           'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other',
-                           'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than',
-                           'too', 'very', 's', 't', 'can', 'will', 'just', 'don', 'should', 'now',
-                           'd', 'll', '\'ll', 'm', 'o', 're', 've', '\'ve', 'y', 'ain', 'aren', 'couldn', 'didn',
-                           'doesn', 'hadn', 'hasn', 'haven', 'isn', 'ma', 'mightn', 'mustn', 'needn',
-                           'shan', 'shouldn', 'wasn', 'weren', 'won', 'wouldn', '\'s', '\'re']
+        self.stop_words = stopwords.words('english')
 
     def transform(self, text):
         words = []
@@ -154,45 +141,54 @@ class Spacy_Tokenize:
         return words
 
 
-class Filter_Tokenize:
+def FilterTokenize_Job(df: pd.DataFrame) -> pd.DataFrame:
 
-    def __init__(self, mode='treebank', text_column='body'):
+    mode = df['mode'].values[0]
+    text_col = df['text_col'].values[0]
 
-        self.mode = mode
-        self.tokenizer = None
-        self.text_col = text_column
+    # remove html tags / emails / websites
+    df.loc[:, text_col] = df[text_col].apply(lambda x: WebItemsFilter(x))
 
-    def transform(self, df):
+    # tokenize the text
+    if mode == 'treebank':
 
-        # remove html tags / emails / websites
-        df.loc[:, self.text_col] = df[self.text_col].apply(lambda x: WebItemsFilter(x))
+        tokenizer = Treebank_WordTokenize()
+        df.loc[:, 'tokens'] = df[text_col].apply(lambda x: tokenizer.transform(x))
 
-        # tokenize the text
-        if self.mode == 'treebank':
+        # translate numerical expressions
+        df.loc[:, 'tokens'] = df.tokens.apply(lambda x: NumericalExpressionFilter(x))
 
-            self.tokenizer = Treebank_WordTokenize()
-            df.loc[:, 'tokens'] = df.loc[:, self.text_col].apply(lambda x: self.tokenizer.transform(x))
+    elif mode == 'spacy':
 
-            # translate numerical expressions
-            df.loc[:, 'tokens'] = df.tokens.apply(lambda x: NumericalExpressionFilter(x))
-
-        elif self.mode == 'spacy':
-
-            self.tokenizer = Spacy_Tokenize()
-            df.loc[:, 'tokens'] = df.loc[:, self.text_col].apply(lambda x: self.tokenizer.transform(x))
-
-        return df
-
-
-def SpacyTokenize_JobRay(df: pd.DataFrame) -> pd.DataFrame:
-    spt = Spacy_Tokenize()
-    df.loc[:, 'tokens'] = df.text.apply(lambda x: spt.transform(x))
+        tokenizer = Spacy_Tokenize()
+        df.loc[:, 'tokens'] = df[text_col].apply(lambda x: tokenizer.transform(x))
 
     return df
 
 
-def TreebankTokenize_JobRay(df: pd.DataFrame) -> pd.DataFrame:
-    twt = Treebank_WordTokenize()
-    df.loc[:, 'tokens'] = df.text.apply(lambda x: twt.transform(x))
+def FilterTokenize_DF(df, text_col='body', mode='treebank', workers=os.cpu_count()):
+    df.loc[df.index, 'text_col'] = text_col
+    df.loc[df.index, 'mode'] = mode
+    tmp_df = df[['text_col', 'mode', text_col]]
+
+    # convert to a ray distributed dataset and partition dataframe
+    ds = ray.data.from_pandas(tmp_df)
+    ds = ds.repartition(workers)
+
+    # perform filtering and tokenization
+    tr_ds = ds.map_batches(FilterTokenize_Job)
+
+    # extract the tokens column and convert ds to dataframe
+    n_rows = tr_ds.count()
+    tokens_df = tr_ds.map(lambda x: x[["tokens"]]).to_pandas(limit=n_rows).rename({'value': 'tokens'}, axis=1)
+
+    # remove datasets and temporary dataframe in memory
+    del tr_ds, tmp_df
+    ray.shutdown()
+    import gc
+    gc.collect()
+
+    # concatenate original dataframe and tokens dataframe
+    df = pd.concat([df, tokens_df], axis=1)
 
     return df
