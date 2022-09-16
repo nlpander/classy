@@ -28,15 +28,12 @@ def zero_pad(x, max_len):
         return x[0:max_len]
 
 
-def read_corpus_d2v(df):
-    for i in range(0, len(df)):
-        yield TaggedDocument(df['tokens'].loc[i], [df['TAG'].loc[i]])
-
-
 class Generate_Embeddings:
 
     def __init__(self,
                  embedding='w2v',
+                 token_column='tokens',
+                 tag_column='TAG',
                  word_window=5,
                  min_count=30,
                  embedding_dimension=100,
@@ -46,6 +43,8 @@ class Generate_Embeddings:
                  workers=os.cpu_count()):
 
         self.embedding = embedding
+        self.token_column = token_column
+        self.tag_column = tag_column
         self.word_window = word_window
         self.min_count = min_count
         self.embedding_dimension = embedding_dimension
@@ -53,11 +52,12 @@ class Generate_Embeddings:
         self.seq_len_threshold_perc = seq_len_threshold_perc
         self.seq_len_hard_threshold = seq_len_hard_threshold
         self.workers = workers
+        self.index2word = None
         self.threshold = None
         self.embedding_matrix = None
         self.tokens = None
 
-    def compute(self, df_):
+    def compute_embedding(self, df_):
 
         ######## training embedding model ########
 
@@ -65,7 +65,7 @@ class Generate_Embeddings:
 
         if self.embedding == 'w2v':
 
-            sentences = list(df_['tokens'].values)
+            sentences = list(df_[self.token_column].values)
 
             embedding_model = Word2Vec(window=self.word_window,
                                        min_count=self.min_count,
@@ -74,7 +74,8 @@ class Generate_Embeddings:
 
         elif self.embedding == 'd2v':
 
-            sentences = [TaggedDocument(x[0], [x[1]]) for _, x in enumerate(df_.loc[:, ['tokens', 'TAG']].values)]
+            sentences = [TaggedDocument(x[0], [x[1]]) for _, x in
+                         enumerate(df_.loc[:, [self.token_column, self.tag_column]].values)]
 
             embedding_model = Doc2Vec(window=self.word_window,
                                       min_count=self.min_count,
@@ -98,7 +99,7 @@ class Generate_Embeddings:
         ######## do length thresholding ########
 
         if self.threshold_mode == 'perc':
-            self.threshold = int(np.ceil(np.exp(df_.tokens.apply(lambda x: np.log(len(x) + 1)). \
+            self.threshold = int(np.ceil(np.exp(df_[self.token_column].apply(lambda x: np.log(len(x) + 1)). \
                                                 quantile(self.seq_len_threshold_perc)) - 1))
         elif self.threshold_mode == 'hard':
             self.threshold = self.seq_len_hard_threshold
@@ -114,12 +115,12 @@ class Generate_Embeddings:
 
         if self.embedding == 'w2v':
 
-            index2word = embedding_model.wv.key_to_index
+            self.index2word = embedding_model.wv.key_to_index
 
             # get the sequence of indices based on each token
-            df_['ind'] = df_['tokens'].apply(lambda x: token2ind(x, index2word))
+            df_['ind'] = df_[self.token_column].apply(lambda x: token2ind(x, self.index2word))
 
-            # do zero padding
+            # do zero padding - this will truncate sequences which are longer than the threshold
             df_.loc[df_.index, 'ind_pad'] = df_.loc[df_.index, 'ind'].apply(
                 lambda x: np.array(zero_pad(x, self.threshold)))
 
@@ -131,18 +132,20 @@ class Generate_Embeddings:
         elif self.embedding == 'd2v':
 
             # adding indices for the paragraph identities
-            df_['tokens'] = df_['TAG'].apply(lambda x: ['#TAG' + str(int(x))]) + df_['tokens']
-            tag_labels = list(df_.TAG.unique())
+            df_[self.token_column] = df_[self.tag_column].apply(lambda x: ['#TAG' + str(int(x))]) \
+                                       + df_[self.token_column]
+
+            tag_labels = list(df_[[self.tag_column]].unique())
             NT = len(tag_labels)
 
-            index2word = {embedding_model.wv.index_to_key[i]: i + 1 + NT
+            self.index2word = {embedding_model.wv.index_to_key[i]: i + 1 + NT
                           for i in range(0, len(embedding_model.wv.index_to_key))}
 
             for tag in tag_labels:
-                index2word['#TAG%d' % tag] = tag
+                self.index2word['#TAG%d' % tag] = tag
 
             # get the sequence of indices based on each token
-            df_['ind'] = df_['tokens'].apply(lambda x: token2ind(x, index2word))
+            df_['ind'] = df_[self.token_column].apply(lambda x: token2ind(x, self.index2word))
 
             # do zero padding
             df_.loc[df_.index, 'ind_pad'] = df_.loc[df_.index, 'ind'].apply(
@@ -165,7 +168,37 @@ class Generate_Embeddings:
 
         print('Embeddings, Tokens and Labels Generated... %.3f s Elapsed' % (time.time() - T0))
 
-        return [self.embedding_matrix, self.tokens]
+        return self.embedding_matrix, self.index2word, self.tokens
+
+    def wrd_2_emb_tokens_and_pad(self, df_, token_column='tokens', tag_column='TAG'):
+
+        self.token_column = token_column
+        self.tag_column = tag_column
+
+        if (self.embedding_matrix is None or self.index2word is None) or self.threshold is None:
+            print('No trained embeddings found')
+        else:
+            if self.embedding == 'w2v':
+
+                # get the sequence of indices based on each token
+                df_['ind'] = df_[self.token_column].apply(lambda x: token2ind(x, self.index2word))
+
+                # do zero padding - this will truncate sequences which are longer than the threshold
+                df_.loc[df_.index, 'ind_pad'] = df_.loc[df_.index, 'ind'].apply(
+                    lambda x: np.array(zero_pad(x, self.threshold)))
+
+            elif self.embedding == 'd2v':
+
+                # adding indices for the paragraph identities
+                df_[self.token_column]= df_[self.tag_column].apply(lambda x: ['#TAG' + str(int(x))]) \
+                                           + df_[self.token_column]
+
+                # get the sequence of indices based on each token
+                df_['ind'] = df_[self.token_column].apply(lambda x: token2ind(x, self.index2word))
+
+                # do zero padding
+                df_.loc[df_.index, 'ind_pad'] = df_.loc[df_.index, 'ind'].apply(
+                    lambda x: np.array(zero_pad(x, self.threshold)))
 
     def get_embedding_matrix(self):
         return self.embedding_matrix
@@ -173,11 +206,5 @@ class Generate_Embeddings:
     def get_tokens(self):
         return self.tokens
 
-
-def EmbeddingModel_JobRay(df: pd.DataFrame) -> list:
-    ge = Generate_Embeddings(word_window=5, min_count=30, embedding_dimension=100,
-                             threshold_mode='perc', seq_len_threshold_perc=0.95,
-                             workers=1)
-    output = ge.compute(df)
-
-    return output
+    def get_index_2_word(self):
+        return self.index2word
