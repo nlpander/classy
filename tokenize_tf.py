@@ -1,11 +1,13 @@
 import os
 
+import time
 import ray
 import spacy
 import pandas as pd
 import re
 from nltk.tokenize import TreebankWordTokenizer
 from nltk.corpus import stopwords
+
 
 def WebItemsFilter(text):
     text = text.lower()
@@ -142,7 +144,6 @@ class Spacy_Tokenize:
 
 
 def FilterTokenize_Job(df: pd.DataFrame) -> pd.DataFrame:
-
     mode = df['mode'].values[0]
     text_col = df['text_col'].values[0]
 
@@ -166,9 +167,11 @@ def FilterTokenize_Job(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def FilterTokenize_DF(df, text_col='body', mode='treebank', workers=os.cpu_count()):
+def FilterTokenize_DF(df, text_col='body', mode='treebank', output_col='tokens', workers=os.cpu_count()):
+    t0 = time.time()
     df.loc[df.index, 'text_col'] = text_col
     df.loc[df.index, 'mode'] = mode
+    df.loc[df.index, 'output_col'] = output_col
     tmp_df = df[['text_col', 'mode', text_col]]
 
     # convert to a ray distributed dataset and partition dataframe
@@ -190,5 +193,7 @@ def FilterTokenize_DF(df, text_col='body', mode='treebank', workers=os.cpu_count
 
     # concatenate original dataframe and tokens dataframe
     df = pd.concat([df, tokens_df], axis=1)
+
+    print('Total Time Elapsed: %.2f' % (time.time() - t0))
 
     return df
