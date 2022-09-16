@@ -1,7 +1,7 @@
 import pandas as pd
 import time
-from classy.tokenize_tf import FilterTokenize_DF
-from classy.emb_tf import Generate_Embeddings
+from classy.tokenize import FilterTokenize_DF
+from classy.embed import Generate_Embeddings
 
 if __name__ == '__main__':
 
