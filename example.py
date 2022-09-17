@@ -1,7 +1,7 @@
 import pandas as pd
 import time
-from classy.tokenize import FilterTokenize_DF
-from classy.embed import Generate_Embeddings
+from classy.preprocess.tokenize import FilterTokenize_DF
+from classy.preprocess.embed import Generate_Embeddings
 
 if __name__ == '__main__':
 
@@ -15,4 +15,3 @@ if __name__ == '__main__':
     t0 = time.time()
     ge = Generate_Embeddings(embedding='w2v', workers=8, token_column='tokens')
     embedding_matrix, index2word, tokens = ge.compute_embedding(df_)
-    print('Embedding Generation Time Elapsed: %.3f' % (time.time() - t0))

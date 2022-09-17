@@ -1,7 +1,6 @@
 import os
 import time
 import numpy as np
-import pandas as pd
 from gensim.models import Word2Vec, Doc2Vec
 from gensim.models.doc2vec import TaggedDocument
 
