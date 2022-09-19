@@ -23,23 +23,23 @@ class Conv1D_Network(nn.Module):
         self.dropout = dropout
 
         self.Embedding = nn.Embedding(num_embeddings=self.vocab_size, embedding_dim=self.embedding_dim, padding_idx=0). \
-            from_pretrained(embeddings=self.embedding_matrix, freeze=self.freeze_embedding).to(torch.float32).cuda()
+            from_pretrained(embeddings=self.embedding_matrix, freeze=self.freeze_embedding).to(torch.float32)
 
         self.ConvLayers = nn.ModuleList()
         for ci in range(0, self.number_filter_types):
             self.ConvLayers.append(nn.Conv1d(in_channels=self.embedding_dim, out_channels=self.number_filters,
                                              kernel_size=self.filter_dim[ci],
-                                             padding=int((self.filter_dim[ci] - 1) / 2)).to(torch.float32).cuda())
+                                             padding=int((self.filter_dim[ci] - 1) / 2)).to(torch.float32))
 
         self.Flatten = nn.Flatten()
         self.Dropout = nn.Dropout(dropout)
 
         if self.maxPool:
             self.PoolLayer = nn.MaxPool1d(self.number_filter_types * self.number_filters)
-            self.OutputLayer = nn.Linear(in_features=self.seq_len, out_features=1, bias=True).to(torch.float32).cuda()
+            self.OutputLayer = nn.Linear(in_features=self.seq_len, out_features=1, bias=True).to(torch.float32)
         else:
             self.OutputLayer = nn.Linear(in_features=self.seq_len * self.number_filter_types * self.number_filters,
-                                         out_features=1, bias=True).to(torch.float32).cuda()
+                                         out_features=1, bias=True).to(torch.float32)
 
     def forward(self, seq):
 
@@ -85,7 +85,7 @@ class Conv1D_Network_MultLabel(nn.Module):
         self.dropout = dropout
 
         self.Embedding = nn.Embedding(num_embeddings=self.vocab_size, embedding_dim=self.embedding_dim, padding_idx=0). \
-            from_pretrained(embeddings=self.embedding_matrix, freeze=self.freeze_embedding).double().to('cuda')
+            from_pretrained(embeddings=self.embedding_matrix, freeze=self.freeze_embedding).double()
 
         self.ConvLayers = nn.ModuleList()
 
@@ -93,7 +93,7 @@ class Conv1D_Network_MultLabel(nn.Module):
             self.ConvLayers.append(nn.Conv1d(in_channels=self.embedding_dim, out_channels=self.number_filters,
                                              kernel_size=self.filter_dim[ci],
                                              padding=int((self.filter_dim[ci] - 1) / 2)). \
-                                   double().to('cuda'))
+                                   double())
 
         self.Flatten = nn.Flatten()
 
@@ -101,10 +101,10 @@ class Conv1D_Network_MultLabel(nn.Module):
 
         if self.maxPool:
             self.PoolLayer = nn.MaxPool1d(self.number_filter_types * self.number_filters)
-            self.OutputLayer = nn.Linear(in_features=self.seq_len, out_features=1, bias=True).double().to('cuda')
+            self.OutputLayer = nn.Linear(in_features=self.seq_len, out_features=1, bias=True).double()
         else:
             self.OutputLayer = nn.Linear(in_features=self.seq_len * self.number_filter_types * self.number_filters,
-                                         out_features=self.num_labels, bias=True).double().to('cuda')
+                                         out_features=self.num_labels, bias=True).double()
 
     def forward(self, seq):
 

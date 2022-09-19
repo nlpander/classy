@@ -106,6 +106,9 @@ class TrainTestNetworkES:
         epoch_loss = 1
         loss_val = 1
 
+        # send model to cuda device if available
+        self.model.to(device=device, dtype=eval(self.precision))
+
         if self.mode == 'classification':
             criteria = (f1_train < self.f1_threshold or f1_val < self.f1_threshold)
         elif self.mode == 'regression':
@@ -140,7 +143,7 @@ class TrainTestNetworkES:
                 epoch_losses.append(loss.item())
                 y_out_ = y_out.to('cpu').detach().numpy()
 
-                input_batch_ = input_batch.to('cpu').detach().numpy()
+                # input_batch_ = input_batch.to('cpu').detach().numpy()
                 output_batch_ = output_batch.to('cpu').detach().numpy()
 
                 f1 = f1_score(y_out_.round(), output_batch_.round(), average='weighted')
