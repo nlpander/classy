@@ -122,7 +122,69 @@ class Conv1D_Network_MultLabel(nn.Module):
         fc_ = self.Flatten(fc)
         fc_ = self.Dropout(fc_)
 
-        output = torch.sigmoid(self.outputLayer(fc_))
+        output = torch.sigmoid(self.OutputLayer(fc_))
+
+        return output
+
+
+class Conv1D_Network_MultLabel_SA(nn.Module):
+
+    def __init__(self, seq_len, num_labels, embedding_matrix,
+                 freeze_embedding=True,
+                 filter_dimensions=(1, 3, 3, 5),
+                 number_filters=8,
+                 dropout=0.8):
+        super().__init__()
+
+        self.seq_len = seq_len
+        self.num_labels = num_labels
+
+        self.embedding_matrix = embedding_matrix
+        self.vocab_size = embedding_matrix.shape[0]
+        self.embedding_dim = embedding_matrix.shape[1]
+        self.freeze_embedding = freeze_embedding
+
+        self.filter_dim = filter_dimensions
+        self.number_filter_types = len(filter_dimensions)
+        self.number_filters = number_filters
+        self.dropout = dropout
+
+        self.Embedding = nn.Embedding(num_embeddings=self.vocab_size, embedding_dim=self.embedding_dim, padding_idx=0). \
+            from_pretrained(embeddings=self.embedding_matrix, freeze=self.freeze_embedding).double()
+
+        self.ConvLayers = nn.ModuleList()
+
+        for ci in range(0, self.number_filter_types):
+            self.ConvLayers.append(nn.Conv1d(in_channels=self.embedding_dim, out_channels=self.number_filters,
+                                             kernel_size=self.filter_dim[ci],
+                                             padding=int((self.filter_dim[ci] - 1) / 2)).double())
+
+        self.Flatten = nn.Flatten()
+
+        self.Dropout = nn.Dropout(dropout)
+
+        self.SAHead = TransformerSelfAttentionHead(seq_len=self.seq_len,
+                                                   embed_dim=self.seq_len * self.number_filter_types * self.number_filters,
+                                                   hidden_units=self.seq_len, dropout=dropout).double()
+
+        self.OutputLayer = nn.Linear(in_features=self.seq_len, out_features=self.num_labels, bias=True).double()
+
+    def forward(self, seq):
+
+        y = self.Embedding(seq).transpose(1, 2)
+
+        f = []
+        for ci in range(0, len(self.ConvLayers)):
+            f.append(self.ConvLayers[ci](y))
+
+        fc = torch.cat(tuple(f), 1)
+
+        fc_ = self.Flatten(fc)
+        fc_ = self.Dropout(fc_)
+
+        sa_out = self.SAHead(fc_.reshape(tuple([1] + list(fc_.shape)))).reshape(fc_.shape[0], self.seq_len)
+
+        output = torch.sigmoid(self.OutputLayer(sa_out))
 
         return output
 
