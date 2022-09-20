@@ -154,7 +154,7 @@ class TransformerSelfAttentionHead(nn.Module):
 
         K = self.Dropout(K)
 
-        V = self.WW(inputA)
+        V = self.WV(inputA)
         V = torch.relu(V)
 
         V = self.Dropout(V)
@@ -172,7 +172,7 @@ class TransformerSelfAttentionHead(nn.Module):
 class TransformerHead(nn.Module):
 
     def __init__(self, seq_len, embedding_matrix, hidden_units, sa_heads=4, dropout=0):
-        super().__init_()
+        super().__init__()
 
         self.seq_len = seq_len
         self.hidden_units = hidden_units
