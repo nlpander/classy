@@ -5,13 +5,13 @@ from gensim.models import Word2Vec, Doc2Vec
 from gensim.models.doc2vec import TaggedDocument
 
 
-def token2ind(tokens, index2word):
+def token2ind(tokens, word2index):
     ind = []
-    N = len(index2word) + 1
+    N = len(word2index) + 1
 
     for word in tokens:
-        if word in index2word.keys():
-            ind.append(index2word[word])
+        if word in word2index.keys():
+            ind.append(word2index[word])
         else:
             ind.append(N)
 
@@ -51,7 +51,7 @@ class Generate_Embeddings:
         self.seq_len_threshold_perc = seq_len_threshold_perc
         self.seq_len_hard_threshold = seq_len_hard_threshold
         self.workers = workers
-        self.index2word = None
+        self.word2index = None
         self.threshold = None
         self.embedding_matrix = None
         self.tokens = None
@@ -114,10 +114,10 @@ class Generate_Embeddings:
 
         if self.embedding == 'w2v':
 
-            self.index2word = embedding_model.wv.key_to_index
+            self.word2index = embedding_model.wv.key_to_index
 
             # get the sequence of indices based on each token
-            df_['ind'] = df_[self.token_column].apply(lambda x: token2ind(x, self.index2word))
+            df_['ind'] = df_[self.token_column].apply(lambda x: token2ind(x, self.word2index))
 
             # do zero padding - this will truncate sequences which are longer than the threshold
             df_.loc[df_.index, 'ind_pad'] = df_.loc[df_.index, 'ind'].apply(
@@ -137,14 +137,14 @@ class Generate_Embeddings:
             tag_labels = list(df_[[self.tag_column]].unique())
             NT = len(tag_labels)
 
-            self.index2word = {embedding_model.wv.index_to_key[i]: i + 1 + NT
+            self.word2index = {embedding_model.wv.index_to_key[i]: i + 1 + NT
                           for i in range(0, len(embedding_model.wv.index_to_key))}
 
             for tag in tag_labels:
-                self.index2word['#TAG%d' % tag] = tag
+                self.word2index['#TAG%d' % tag] = tag
 
             # get the sequence of indices based on each token
-            df_['ind'] = df_[self.token_column].apply(lambda x: token2ind(x, self.index2word))
+            df_['ind'] = df_[self.token_column].apply(lambda x: token2ind(x, self.word2index))
 
             # do zero padding
             df_.loc[df_.index, 'ind_pad'] = df_.loc[df_.index, 'ind'].apply(
@@ -167,20 +167,20 @@ class Generate_Embeddings:
 
         print('Embeddings, Tokens and Labels Generated... %.3f s Elapsed' % (time.time() - T0))
 
-        return self.embedding_matrix, self.index2word, self.tokens
+        return self.embedding_matrix, self.word2index, self.tokens
 
     def wrd_2_emb_tokens_and_pad(self, df_, token_column='tokens', tag_column='TAG'):
 
         self.token_column = token_column
         self.tag_column = tag_column
 
-        if (self.embedding_matrix is None or self.index2word is None) or self.threshold is None:
+        if (self.embedding_matrix is None or self.word2index is None) or self.threshold is None:
             print('No trained embeddings found')
         else:
             if self.embedding == 'w2v':
 
                 # get the sequence of indices based on each token
-                df_['ind'] = df_[self.token_column].apply(lambda x: token2ind(x, self.index2word))
+                df_['ind'] = df_[self.token_column].apply(lambda x: token2ind(x, self.word2index))
 
                 # do zero padding - this will truncate sequences which are longer than the threshold
                 df_.loc[df_.index, 'ind_pad'] = df_.loc[df_.index, 'ind'].apply(
@@ -193,7 +193,7 @@ class Generate_Embeddings:
                                            + df_[self.token_column]
 
                 # get the sequence of indices based on each token
-                df_['ind'] = df_[self.token_column].apply(lambda x: token2ind(x, self.index2word))
+                df_['ind'] = df_[self.token_column].apply(lambda x: token2ind(x, self.word2index))
 
                 # do zero padding
                 df_.loc[df_.index, 'ind_pad'] = df_.loc[df_.index, 'ind'].apply(
@@ -205,5 +205,5 @@ class Generate_Embeddings:
     def get_tokens(self):
         return self.tokens
 
-    def get_index_2_word(self):
-        return self.index2word
+    def get_word2index(self):
+        return self.word2index
