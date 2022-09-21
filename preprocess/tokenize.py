@@ -183,13 +183,15 @@ def FilterTokenize_DF(df, text_col='body', mode='treebank', output_col='tokens',
 
     # extract the tokens column and convert ds to dataframe
     n_rows = tr_ds.count()
-    tokens_df = tr_ds.map(lambda x: x[["tokens"]]).to_pandas(limit=n_rows).rename({'value': 'tokens'}, axis=1)
+    tokens_df = tr_ds.map_batches(lambda x: x[["tokens"]]).to_pandas(limit=n_rows).rename({'value': 'tokens'}, axis=1)
 
     # remove datasets and temporary dataframe in memory
     del tr_ds, tmp_df
     ray.shutdown()
     import gc
     gc.collect()
+    # drop parameter columns
+    df = df.drop(['text_col', 'mode', 'output_col'], axis=1)
 
     # concatenate original dataframe and tokens dataframe
     df = pd.concat([df, tokens_df], axis=1)
