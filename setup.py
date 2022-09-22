@@ -16,6 +16,6 @@ setuptools.setup(
         "Bug Tracker": "https://github.com/nlpander/classy/issues"
     },
     license='MIT',
-    packages=['classy'],
+    packages=['preprocess','train'],
     install_requires=['ray','numpy','pandas','torch','matplotlib','datasets','nltk','gensim','spacy'],
 )
