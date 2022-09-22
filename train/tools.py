@@ -106,6 +106,8 @@ class TrainTestNetworkES:
         epoch_loss = 1
         loss_val = 1
 
+        print(f'Training using {device}...')
+
         # send model to cuda device if available
         self.model.to(device=device, dtype=eval(self.precision))
 
