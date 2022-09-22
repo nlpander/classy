@@ -1,3 +1,22 @@
+# classy
+A set of tools to do text efficient pre-processing (tokenization and embedding generation) and classification
+primarily with different flavours of convolutional neural networks. 
+
+Undertaking work to: 
+  1) provide some clear examples in notebooks
+  2) enable greater customization of self-attention layers 
+  3) wrappers for doing multi-core hyperparameter tuning
+
+If you're interested in contributing please get in touch: tarafulis@gmail.com
+
+
+
+# 
+
+The following shows a full example of using both the classy.preprocess and classy.train libraries. 
+The notebook is contained in this repo under the name example.ipynb.
+
+
 ```python
 import os
 import time
