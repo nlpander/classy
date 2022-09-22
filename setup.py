@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name='classy',
-    version='1.0.0pre',
+    version='1.0.0',
     author='nlpander',
     author_email='tarafulis@gmail.com',
     description='a package to do distributed preprocessing and training of neural networks for classification',
