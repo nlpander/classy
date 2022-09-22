@@ -38,19 +38,6 @@ df_train.head()
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -241,7 +228,7 @@ embedding_matrix.shape
 
 
 
-### initiate model 
+### initialise model 
 
 we initialise a model from our library; these extend to any pytorch models which take a set of tokens and matrix of embeddings
 as an input; here specify the sequence length specified by the 1th dimension of the input data dictionary, vocabulary size and embedding dimension (specified by the 1st and 0th dimensions of the embedding matrix respectively), whether to freeze to embeddings, the length of various convolutional filters together with the numbers of each, dropout and the number of labels we are trying to classify
