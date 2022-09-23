@@ -168,7 +168,7 @@ class Conv1D_Network_MultLabel_SA(nn.Module):
                                                    embed_dim=self.seq_len * self.number_filter_types * self.number_filters,
                                                    hidden_units=self.hidden_units, dropout=dropout).double()
 
-        self.OutputLayer = nn.Linear(in_features=self.self.hidden_units, out_features=self.num_labels, bias=True).double()
+        self.OutputLayer = nn.Linear(in_features=self.hidden_units, out_features=self.num_labels, bias=True).double()
 
     def forward(self, seq):
 
