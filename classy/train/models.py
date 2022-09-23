@@ -183,7 +183,7 @@ class Conv1D_Network_MultLabel_SA(nn.Module):
         fc_ = self.Flatten(fc)
         fc_ = self.Dropout(fc_)
 
-        sa_out = self.SAHead(fc_.reshape(tuple([1] + list(fc_.shape)))).reshape(fc_.shape[0], self.seq_len)
+        sa_out = self.SAHead(fc_.reshape(tuple([1] + list(fc_.shape)))).reshape(fc_.shape[0], self.hidden_units)
 
         output = torch.sigmoid(self.OutputLayer(sa_out))
 
