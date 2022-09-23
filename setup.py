@@ -15,7 +15,10 @@ setuptools.setup(
     project_urls = {
         "Bug Tracker": "https://github.com/nlpander/classy/issues"
     },
-    license='MIT',
+    license='GNU',
     packages=['classy'],
-    install_requires=['ray','numpy','pandas','torch','matplotlib','datasets','nltk','gensim','spacy'],
+    install_requires=['ray==1.13.0','numpy==1.22.4','pandas==1.4.2',
+                    'torch==1.12.1+cu116','nltk==3.7',
+                    'gensim==4.1.2','spacy==3.3.1','matplotlib',
+                    'datasets',],
 )
