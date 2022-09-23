@@ -162,7 +162,7 @@ class Conv1D_Network_MultLabel_SA(nn.Module):
 
         self.Flatten = nn.Flatten()
 
-        self.Dropout = nn.Dropout(dropout)
+        #self.Dropout = nn.Dropout(dropout)
 
         self.SAHead = TransformerSelfAttentionHead(seq_len=self.seq_len,
                                                    embed_dim=self.seq_len * self.number_filter_types * self.number_filters,
