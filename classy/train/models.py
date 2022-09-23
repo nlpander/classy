@@ -162,7 +162,7 @@ class Conv1D_Network_MultLabel_SA(nn.Module):
 
         self.Flatten = nn.Flatten()
 
-        #self.Dropout = nn.Dropout(dropout)
+        self.Dropout = nn.Dropout(dropout)
 
         self.SAHead = TransformerSelfAttentionHead(seq_len=self.seq_len,
                                                    embed_dim=self.seq_len * self.number_filter_types * self.number_filters,
@@ -181,7 +181,7 @@ class Conv1D_Network_MultLabel_SA(nn.Module):
         fc = torch.cat(tuple(f), 1)
 
         fc_ = self.Flatten(fc)
-        fc_ = self.Dropout(fc_)
+        #fc_ = self.Dropout(fc_)
 
         sa_out = self.SAHead(fc_.reshape(tuple([1] + list(fc_.shape)))).reshape(fc_.shape[0], self.hidden_units)
 
