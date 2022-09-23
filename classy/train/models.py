@@ -129,7 +129,7 @@ class Conv1D_Network_MultLabel(nn.Module):
 
 class Conv1D_Network_MultLabel_SA(nn.Module):
 
-    def __init__(self, seq_len, num_labels, embedding_matrix,
+    def __init__(self, seq_len, num_labels, embedding_matrix, hidden_units,
                  freeze_embedding=True,
                  filter_dimensions=(1, 3, 3, 5),
                  number_filters=8,
@@ -147,6 +147,7 @@ class Conv1D_Network_MultLabel_SA(nn.Module):
         self.filter_dim = filter_dimensions
         self.number_filter_types = len(filter_dimensions)
         self.number_filters = number_filters
+        self.hidden_units = hidden_units
         self.dropout = dropout
 
         self.Embedding = nn.Embedding(num_embeddings=self.vocab_size, embedding_dim=self.embedding_dim, padding_idx=0). \
@@ -165,9 +166,9 @@ class Conv1D_Network_MultLabel_SA(nn.Module):
 
         self.SAHead = TransformerSelfAttentionHead(seq_len=self.seq_len,
                                                    embed_dim=self.seq_len * self.number_filter_types * self.number_filters,
-                                                   hidden_units=self.seq_len, dropout=dropout).double()
+                                                   hidden_units=self.hidden_units, dropout=dropout).double()
 
-        self.OutputLayer = nn.Linear(in_features=self.seq_len, out_features=self.num_labels, bias=True).double()
+        self.OutputLayer = nn.Linear(in_features=self.self.hidden_units, out_features=self.num_labels, bias=True).double()
 
     def forward(self, seq):
 
