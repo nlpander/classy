@@ -50,21 +50,21 @@ def FilterTokenize_Job(df: pd.DataFrame) -> pd.DataFrame:
     text_col = df['text_col'].values[0]
 
     # remove html tags / emails / websites
-    df.loc[:, text_col] = df[text_col].apply(lambda x: WebItemsFilter(x))
+    df.loc[:, text_col] = df[text_col].apply(WebItemsFilter)
 
     # tokenize the text
     if mode == 'treebank':
 
         tokenizer = Treebank_WordTokenize()
-        df.loc[:, 'tokens'] = df[text_col].apply(lambda x: tokenizer.transform(x))
+        df.loc[:, 'tokens'] = df[text_col].apply(tokenizer.transform)
 
         # translate numerical expressions
-        df.loc[:, 'tokens'] = df.tokens.apply(lambda x: NumericalExpressionFilter(x))
+        df.loc[:, 'tokens'] = df.tokens.apply(NumericalExpressionFilter)
 
     elif mode == 'spacy':
 
         tokenizer = Spacy_Tokenize()
-        df.loc[:, 'tokens'] = df[text_col].apply(lambda x: tokenizer.transform(x))
+        df.loc[:, 'tokens'] = df[text_col].apply(tokenizer.transform)
 
     return df
 
