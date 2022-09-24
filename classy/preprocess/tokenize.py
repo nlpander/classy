@@ -18,11 +18,12 @@ class Treebank_WordTokenize:
         words = []
         for w in self.word_tokenizer.tokenize(text):
             w = w.lower()
-            if w not in self.stop_words:
-                if w.isnumeric():
-                    words = words + ['#NUM']
-                elif w not in self.stop_words:
-                    words = words + [w]
+            if w in self.stop_words:
+                pass
+            elif w.isnumeric():
+                words.append('#NUM')
+            else:
+                words.append(w)
 
         return words
 
