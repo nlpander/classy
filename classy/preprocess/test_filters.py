@@ -1,5 +1,5 @@
 import pytest
-from classy.preprocess.filters import WebItemsFilter
+from classy.preprocess.filters import WebItemsFilter, CONTAINS_NUM_REGEX
 import re
 
 def collapse_whitespace(text):
@@ -21,3 +21,13 @@ def collapse_whitespace(text):
 ])
 def test_web_items_filter(in_str, expected_out):
     assert collapse_whitespace(WebItemsFilter(in_str)) == collapse_whitespace(expected_out)
+
+
+def test_contains_num_regex():
+    assert CONTAINS_NUM_REGEX.sub('#NUM', 'unchanged_thing') == 'unchanged_thing'
+    assert CONTAINS_NUM_REGEX.sub('#NUM', 'change23_thing') == '#NUM'
+    assert CONTAINS_NUM_REGEX.sub('#NUM', '23,232.123') == '#NUM'
+    assert CONTAINS_NUM_REGEX.sub('#NUM', 'change23_thing') == '#NUM'
+    assert CONTAINS_NUM_REGEX.sub('#NUM', 'change.thing') == 'change.thing'
+
+

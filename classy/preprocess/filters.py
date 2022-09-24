@@ -12,15 +12,15 @@ def WebItemsFilter(text):
     return WEB_REGEX.sub(' ', text)
 
 
-
+# matches on an entire string that contains a number
+CONTAINS_NUM_REGEX = re.compile('^.*\d+([,\.]\d+)*.*$')
 
 def NumericalExpressionFilter(word_list):
     # This also removes words that contain *any number*
     # return [w for w in word_list if not any(c.isdigit() for c in w)]
-    for i in range(0, len(word_list)):
+    for i, word in enumerate(word_list):
 
-        # current word
-        word = word_list[i]
+        word = CONTAINS_NUM_REGEX.sub('#NUM', word)
 
         # currency
         currency = re.findall('(gbp(\d+))|(usd(\d+))|(eur(\d+))', word)
@@ -39,15 +39,6 @@ def NumericalExpressionFilter(word_list):
 
         # xl then a number
         mult = re.findall('[xl]\d+', word)
-
-        # thousands
-        thou = re.findall('\d+,\d+', word)
-
-        # dec
-        dec = re.findall('\d+.\d+', word)
-
-        if word.isdigit() or len(thou) != 0 or len(dec) != 0:
-            word_list[i] = '#NUM'
 
         if len(currency) != 0:
             word_list[i] = '#CURRENCY'
