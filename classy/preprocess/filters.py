@@ -1,47 +1,17 @@
 import re
 
+WEB_REGEX = re.compile('(' + '|'.join([
+    'by .*;',
+    '\w+@\w+.com', # email address
+    '\s@\w+', # twitter style handle
+    'copyright \d+ \w+. all rights reserved.',
+    '<[^>]*>', # html tag
+]) + ')', re.IGNORECASE)
+
 def WebItemsFilter(text):
-    text = text.lower()
+    return WEB_REGEX.sub(' ', text)
 
-    no_auth = 0
-    no_em = 0
-    no_tw = 0
-    no_copy = 0
-    no_htmltag = 0
 
-    try:
-        auth = re.findall('(by .*;)', text)
-        text = text.replace(auth[0], '')
-    except:
-        no_auth = 1
-
-    try:
-        em = re.findall('(\w+@\w+.com)', text)
-        text = text.replace(em[0], '')
-    except:
-        no_em = 1
-
-    try:
-        tw = re.findall('(\s@\w+)', text)
-        text = text.replace(tw[0], '')
-    except:
-        no_tw = 1
-
-    try:
-        copyright = re.findall('copyright \d+ \w+. all rights reserved.', text)
-        text = text.replace(copyright[0], '')
-    except:
-        no_copy = 1
-
-    # removing html tags
-    try:
-        tags = re.findall('<[^>]*>', text)
-        for tag in tags:
-            text = text.replace(tag, '')
-    except:
-        no_htmltag = 1
-
-    return text
 
 
 def NumericalExpressionFilter(word_list):
