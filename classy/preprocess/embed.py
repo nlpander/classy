@@ -6,16 +6,8 @@ from gensim.models.doc2vec import TaggedDocument
 
 
 def token2ind(tokens, word2index):
-    ind = []
-    N = len(word2index) + 1
-
-    for word in tokens:
-        if word in word2index.keys():
-            ind.append(word2index[word])
-        else:
-            ind.append(N)
-
-    return ind
+    dummy_index = len(word2index) + 1
+    return [word2index.get(word, dummy_index) for word in tokens]
 
 
 def zero_pad(x, max_len):
