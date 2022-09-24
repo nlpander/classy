@@ -35,11 +35,12 @@ class Spacy_Tokenize:
     def transform(self, text):
         words = []
         for w in self.tokenizer(text):
-            if ((w.is_stop is False) and (w.like_email is False)) and (w.like_url is False):
-                if w.ent_type_ != '':
-                    words = words + [w.ent_type_]
-                else:
-                    words = words + [w.text.lower()]
+            if w.is_stop or w.like_email or w.like_url:
+                pass
+            elif w.ent_type_ != '':
+                words.append(w.ent_type_)
+            else:
+                words.append(w.text.lower())
 
         return words
 
