@@ -19,7 +19,7 @@ setuptools.setup(
     #packages = setuptools.find_packages(),
     packages = ['classy','classy.preprocess','classy.train'],
     install_requires=['ray==1.13.0','numpy==1.22.4','pandas==1.4.2',
-                    'torch==1.12.1+cu116','nltk==3.7',
+                    'torch==1.11.0','nltk==3.7',
                     'gensim==4.1.2','spacy==3.3.1','matplotlib',
                     'datasets',],
 )
