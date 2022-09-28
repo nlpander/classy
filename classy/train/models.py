@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
-from positional_encodings.torch_encodings import PositionalEncoding2D, Summer
+from positional_encodings.torch_encodings import PositionalEncoding1D, Summer
 
 
 class Conv1D_Network(nn.Module):
@@ -154,8 +154,8 @@ class Conv1D_Network_MultLabel_SA(nn.Module):
         self.Embedding = nn.Embedding(num_embeddings=self.vocab_size, embedding_dim=self.embedding_dim, padding_idx=0). \
             from_pretrained(embeddings=self.embedding_matrix, freeze=self.freeze_embedding).double()
 
-        self.PositionEmbedding = PositionalEncoding2D(channels=self.seq_len)
-        self.LN = nn.LayerNorm(self.embedding_dim)
+        self.PositionEmbedding = PositionalEncoding1D(channels=self.seq_len)
+        self.LN = nn.LayerNorm(self.seq_len)
 
         self.ConvLayers = nn.ModuleList()
 
@@ -233,7 +233,7 @@ class TransformerSelfAttentionHead(nn.Module):
         # V = self.Dropout(V)
 
         QK = torch.bmm(Q, K.transpose(1, 2))
-        QK = self.dropout(QK)
+        QK = self.Dropout(QK)
 
         QKs = F.softmax(QK / self.embed_dim ** 0.5, dim=1)
         QKs = F.softmax(QKs, dim=2)
