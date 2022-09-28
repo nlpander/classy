@@ -9,7 +9,16 @@ WEB_REGEX = re.compile('(' + '|'.join([
 ]) + ')', re.IGNORECASE)
 
 def WebItemsFilter(text):
-    return WEB_REGEX.sub(' ', text)
+
+    WEB_REGEX = re.compile('(' + '|'.join([
+        'by .*;',
+        '\w+@\w+.com', # email address
+        '\s@\w+', # twitter style handle
+        'copyright \d+ \w+. all rights reserved.',
+        '<[^>]*>', # html tag
+    ]) + ')', re.IGNORECASE)
+
+    return re.sub(WEB_REGEX,' ', text)
 
 
 # matches on an entire string that contains a number
@@ -20,8 +29,9 @@ def NumericalExpressionFilter(word_list):
     # return [w for w in word_list if not any(c.isdigit() for c in w)]
     for i, word in enumerate(word_list):
 
-        word = CONTAINS_NUM_REGEX.sub('#NUM', word)
-
+        # incorrect: word = CONTAINS_NUM_REGEX.sub('#NUM', word)
+        #word = re.sub(CONTAINS_NUM_REGEX, '#NUM', word)
+        
         # currency
         currency = re.findall('(gbp(\d+))|(usd(\d+))|(eur(\d+))', word)
 
@@ -39,6 +49,12 @@ def NumericalExpressionFilter(word_list):
 
         # xl then a number
         mult = re.findall('[xl]\d+', word)
+        
+        # general number
+        num = re.findall(CONTAINS_NUM_REGEX, word)
+
+        if len(num) != 0:
+            word_list[i] = '#NUM'
 
         if len(currency) != 0:
             word_list[i] = '#CURRENCY'
@@ -57,6 +73,7 @@ def NumericalExpressionFilter(word_list):
 
         if len(listed) != 0:
             word_list[i] = '#LISTING'
-
+            
+        
     return word_list
 
