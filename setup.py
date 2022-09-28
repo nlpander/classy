@@ -21,7 +21,7 @@ setuptools.setup(
     install_requires=['ray==1.13.0','numpy','pandas',
                     'torch==1.11.0','nltk==3.7','spacy',
                     'gensim==4.1.2','matplotlib',
-                    'datasets',],
+                    'datasets','positional_encodings[pytorch]'],
 )
 
 #'spacy==3.3.1'

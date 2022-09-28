@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
+from positional_encodings.torch_encodings import PositionalEncoding2D, Summer
 
 
 class Conv1D_Network(nn.Module):
@@ -153,6 +154,9 @@ class Conv1D_Network_MultLabel_SA(nn.Module):
         self.Embedding = nn.Embedding(num_embeddings=self.vocab_size, embedding_dim=self.embedding_dim, padding_idx=0). \
             from_pretrained(embeddings=self.embedding_matrix, freeze=self.freeze_embedding).double()
 
+        self.PositionEmbedding = PositionalEncoding2D(channels=self.seq_len)
+        self.LN = nn.LayerNorm(self.embedding_dim)
+
         self.ConvLayers = nn.ModuleList()
 
         for ci in range(0, self.number_filter_types):
@@ -174,6 +178,12 @@ class Conv1D_Network_MultLabel_SA(nn.Module):
 
         y = self.Embedding(seq).transpose(1, 2)
 
+        # add the positional embedding
+        y = Summer(self.PositionEmbedding)(y)
+
+        # do a normalization
+        y = self.LN(y)
+
         f = []
         for ci in range(0, len(self.ConvLayers)):
             f.append(self.ConvLayers[ci](y))
@@ -181,7 +191,7 @@ class Conv1D_Network_MultLabel_SA(nn.Module):
         fc = torch.cat(tuple(f), 1)
 
         fc_ = self.Flatten(fc)
-        #fc_ = self.Dropout(fc_)
+        # fc_ = self.Dropout(fc_)
 
         sa_out = self.SAHead(fc_.reshape(tuple([1] + list(fc_.shape)))).reshape(fc_.shape[0], self.hidden_units)
 
@@ -210,19 +220,20 @@ class TransformerSelfAttentionHead(nn.Module):
         Q = self.WQ(inputA)
         Q = torch.relu(Q)
 
-        Q = self.Dropout(Q)
+        # Q = self.Dropout(Q)
 
         K = self.WK(inputA)
         K = torch.relu(K)
 
-        K = self.Dropout(K)
+        # K = self.Dropout(K)
 
         V = self.WV(inputA)
         V = torch.relu(V)
 
-        V = self.Dropout(V)
+        # V = self.Dropout(V)
 
         QK = torch.bmm(Q, K.transpose(1, 2))
+        QK = self.dropout(QK)
 
         QKs = F.softmax(QK / self.embed_dim ** 0.5, dim=1)
         QKs = F.softmax(QKs, dim=2)
@@ -294,7 +305,7 @@ class ClassicTransformer(nn.Module):
 
         for ti in range(0, self.sa_modules):
             self.TransformerHeads.append(TransformerHead(seq_len=self.seq_len, embedding_matrix=self.embedding_matrix,
-                                                         hidden_units=self.hidden_units, sa_heads=self.sa_heads, 
+                                                         hidden_units=self.hidden_units, sa_heads=self.sa_heads,
                                                          dropout=self.dropout))
 
         self.LN = nn.LayerNorm([self.seq_len, self.embed_dim])
@@ -334,4 +345,3 @@ class ClassicTransformer(nn.Module):
         y = torch.sigmoid(y)
 
         return y
-    
