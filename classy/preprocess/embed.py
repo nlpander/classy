@@ -126,7 +126,7 @@ class Generate_Embeddings:
             df_[self.token_column] = df_[self.tag_column].apply(lambda x: ['#TAG' + str(int(x))]) \
                                        + df_[self.token_column]
 
-            tag_labels = list(df_[[self.tag_column]].unique())
+            tag_labels = list(df_[self.tag_column].unique())
             NT = len(tag_labels)
 
             self.word2index = {embedding_model.wv.index_to_key[i]: i + 1 + NT
