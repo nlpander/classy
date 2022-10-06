@@ -50,10 +50,16 @@ def BatchEvaluation(model, criterion, input_val, output_val, batch_size, mode='c
     return f1_val_, loss_val_
 
 
+def decay_learning_rate(optimizer, epoch, initial_learning_rate, decay_constant, nb_epochs):
+    for g in optimizer.param_groups:
+        g['lr'] = initial_learning_rate * np.exp((-epoch * decay_constant) / nb_epochs)
+        # print(g['lr'])
+
+
 class TrainTestNetworkES:
 
     def __init__(self, model, input_, output_, nb_epochs, batch_size, criterion, optimizer, f1_threshold, mse_threshold,
-                 batch_progress=True, mode='classification', multi_label=False, precision='torch.float32'):
+                 decay_LR=True, decay_constant=0.8, batch_progress=True, mode='classification', multi_label=False, precision='torch.float32'):
 
         self.model = model
         self.input_train = input_['train']
@@ -69,6 +75,8 @@ class TrainTestNetworkES:
         self.batch_size = batch_size
         self.criterion = criterion
         self.optimizer = optimizer
+        self.exp_decay_learning_rate = decay_LR
+        self.decay_constant = decay_constant
         self.f1_threshold = f1_threshold
         self.mse_threshold = mse_threshold
         self.batch_progress = batch_progress
@@ -82,6 +90,7 @@ class TrainTestNetworkES:
         self.epoch_loss_train = None
         self.f1_test = None
         self.loss_test = None
+        self.initial_learning_rate = None
 
     def train(self):
 
@@ -105,6 +114,10 @@ class TrainTestNetworkES:
         # intialize the loss values
         epoch_loss = 1
         loss_val = 1
+
+        # get initial learning rate
+        for g in self.optimizer.param_groups:
+            self.initial_learning_rate = g['lr']
 
         print(f'Training using {device}...')
 
@@ -180,6 +193,10 @@ class TrainTestNetworkES:
                 print('############################################################################')
                 print('')
                 n += 1
+
+            # if we are adjusting the learning rate then do it here
+            if self.exp_decay_learning_rate:
+                decay_learning_rate(self.optimizer, n, self.initial_learning_rate, self.decay_constant, self.nb_epochs)
 
             # upgrade criteria for early stopping
             if self.mode == 'classification':
