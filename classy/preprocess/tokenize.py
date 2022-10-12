@@ -9,10 +9,24 @@ from nltk.corpus import stopwords
 
 from classy.preprocess.filters import WebItemsFilter, NumericalExpressionFilter
 
+
 class Treebank_WordTokenize:
     def __init__(self):
         self.word_tokenizer = TreebankWordTokenizer()
         self.stop_words = stopwords.words('english')
+
+        neg_words = [x for x in self.stop_words if 'n\'t' in x or x in ['no', 'not', 'nor']]
+        neg_words = neg_words + ['ain', 'aren', 'couldn', 'didn', 'doesn', 'hadn', 'hasn',
+                                 'haven', 'isn', 'mightn', 'mustn', 'needn', 'shan',
+                                 'shouldn', 'wasn', 'weren', 'won', 'wouldn']
+        pol_words = ['up', 'down', 'above', 'below', 'over', 'under', 'on', 'off', 'few', 'more',
+                     'most', 'very', 'during', 'through', 'against', 'until', 'do', 'doing', 'did',
+                     'does', 'before', 'after', 'between']
+        mod_words = ['should', 'could', 'would']
+
+        self.stop_words = [x for x in self.stop_words if x not in (neg_words + pol_words + mod_words)]
+        self.neg_words = neg_words
+        self.mod_words = mod_words
 
     def transform(self, text):
         words = []
@@ -20,6 +34,10 @@ class Treebank_WordTokenize:
             w = w.lower()
             if w in self.stop_words:
                 pass
+            elif w in self.neg_words:
+                words.append('#NEG')
+            elif w in self.mod_words:
+                words.append('#MOD')
             elif w.isnumeric():
                 words.append('#NUM')
             else:
